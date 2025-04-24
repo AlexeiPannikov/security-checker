@@ -1,0 +1,17 @@
+{
+  "platforms": [
+    "apple",
+    "android",
+    "web"
+  ],
+  "apple": {
+    "modules": [
+      "SecurityCheckerModule"
+    ]
+  },
+  "android": {
+    "modules": [
+      "expo.modules.securitychecker.SecurityCheckerModule"
+    ]
+  }
+}
