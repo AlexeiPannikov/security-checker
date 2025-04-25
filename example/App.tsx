@@ -1,37 +1,75 @@
 import { useEvent } from 'expo';
-import SecurityChecker, { SecurityCheckerView } from 'security-checker';
+import SecurityChecker, {SecurityCheckReport} from 'security-checker';
 import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import {useEffect, useState} from "react";
+
+
+const Evidence = ({ evidence }: { evidence: Record<string, string[]> }) => {
+  return (
+      <>
+        {Object.entries(evidence).map(([key, value]) => (
+            <View key={key}>
+              <Text style={{color: "white", fontSize: 16}}>{key}:</Text>
+              {value.map((item, index) => (
+                  <Text key={`${key}-${index}`} style={{color: "white"}}>
+                    {index + 1}) {item}
+                  </Text>
+              ))}
+            </View>
+        ))}
+      </>
+  );
+}
+
+const RenderData = ({report}: { report?: SecurityCheckReport }) => {
+  if (!report) return null
+
+  return (
+      <View>
+        <View style={{backgroundColor: report.isSecure ? "green" : "red", padding: 10, borderRadius: 10}}>
+          <Text style={{color: "white", fontSize: 20}}>{report.isSecure ? "Secure" : "Environment is not secure"}</Text>
+        </View>
+        <View style={{backgroundColor: report.debugger.value === true ? "red" : report.debugger.value === false ? "green" : "yellow", padding: 10, marginTop: 10, borderRadius: 10}}>
+          <Text style={{color: "white", fontSize: 18}}>{report.debugger.value === true ? "Debugger detected" : report.debugger.value === false ? "Debugger is not detected" : "Could not determine"}</Text>
+          <Evidence evidence={report.debugger.evidence} />
+        </View>
+
+        <View style={{backgroundColor: report.jailbreak.value ? "red" : "green", padding: 10, marginTop: 10, borderRadius: 10}}>
+          <Text style={{color: "white", fontSize: 18}}>{report?.jailbreak?.value ? "Jailbreak detected" : "Device is not jailbroken"}</Text>
+          <Evidence evidence={report.jailbreak.evidence} />
+        </View>
+
+        <View style={{backgroundColor: report.emulator.value ? "red" : "green", padding: 10, marginTop: 10, borderRadius: 10}}>
+          <Text style={{color: "white", fontSize: 18}}>{report?.emulator?.value ? "Run on simulator" : "Run on real device"}</Text>
+          <Evidence evidence={report.emulator.evidence} />
+        </View>
+      </View>
+  )
+}
 
 export default function App() {
-  const onChangePayload = useEvent(SecurityChecker, 'onChange');
+  const [data, setData] = useState<SecurityCheckReport>();
+
+  useEffect(() => {
+    const setReport = (report: SecurityCheckReport) => {
+      console.log(report)
+      setData(report)
+    }
+    const res = SecurityChecker.check()
+    setReport(res)
+    SecurityChecker.addListener("onChange", setReport)
+
+    return () => {
+      SecurityChecker.removeListener("onChange", setReport)
+    }
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.container}>
         <Text style={styles.header}>Module API Example</Text>
-        <Group name="Constants">
-          <Text>{SecurityChecker.PI}</Text>
-        </Group>
         <Group name="Functions">
-          <Text>{SecurityChecker.hello()}</Text>
-        </Group>
-        <Group name="Async functions">
-          <Button
-            title="Set value"
-            onPress={async () => {
-              await SecurityChecker.setValueAsync('Hello from JS!');
-            }}
-          />
-        </Group>
-        <Group name="Events">
-          <Text>{onChangePayload?.value}</Text>
-        </Group>
-        <Group name="Views">
-          <SecurityCheckerView
-            url="https://www.example.com"
-            onLoad={({ nativeEvent: { url } }) => console.log(`Loaded: ${url}`)}
-            style={styles.view}
-          />
+          <RenderData report={data} />
         </Group>
       </ScrollView>
     </SafeAreaView>
