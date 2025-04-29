@@ -1,16 +1,17 @@
 import { useEvent } from 'expo';
 import SecurityChecker, {SecurityCheckReport} from 'security-checker';
-import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
-import {useEffect, useState} from "react";
+import {Button, Platform, SafeAreaView, ScrollView, Text, View} from 'react-native';
+import {PropsWithChildren, useEffect, useState} from "react";
 
 
 const Evidence = ({ evidence }: { evidence: Record<string, string[]> }) => {
+    if (!evidence) return null
   return (
       <>
-        {Object.entries(evidence).map(([key, value]) => (
-            <View key={key}>
+        {Object.entries(evidence)?.map(([key, value]) => (
+            !!value && <View key={key}>
               <Text style={{color: "white", fontSize: 16}}>{key}:</Text>
-              {value.map((item, index) => (
+              {value?.map((item, index) => (
                   <Text key={`${key}-${index}`} style={{color: "white"}}>
                     {index + 1}) {item}
                   </Text>
@@ -21,30 +22,55 @@ const Evidence = ({ evidence }: { evidence: Record<string, string[]> }) => {
   );
 }
 
-const RenderData = ({report}: { report?: SecurityCheckReport }) => {
+const RenderData = ({report}: { report:SecurityCheckReport }) => {
+  return (
+      <View>
+          <View style={{backgroundColor: report.isSecure ? "green" : "red", padding: 10, borderRadius: 10}}>
+              <Text style={{color: "white", fontSize: 20}}>{report.isSecure ? "Secure" : "Environment is not secure"}</Text>
+          </View>
+
+          <View style={{backgroundColor: report.debugger?.value === true ? "red" : report.debugger?.value === false ? "green" : "yellow", padding: 10, marginTop: 10, borderRadius: 10}}>
+              <Text style={{color: "white", fontSize: 18}}>{report.debugger?.value === true ? "Debugger detected" : report.debugger?.value === false ? "Debugger is not detected" : "Could not determine"}</Text>
+              <Evidence evidence={report.debugger?.evidence} />
+          </View>
+
+          <View style={{backgroundColor: report.emulator?.value ? "red" : "green", padding: 10, marginTop: 10, borderRadius: 10}}>
+              <Text style={{color: "white", fontSize: 18}}>{report?.emulator?.value ? "Run on simulator" : "Run on real device"}</Text>
+              <Evidence evidence={report.emulator?.evidence} />
+          </View>
+
+          {
+              Platform.OS === "ios" && <RenderIOSData report={report as SecurityCheckReport<"ios">} />
+          }
+
+          {
+              Platform.OS === "android" && <RenderAndroidData report={report as SecurityCheckReport<"android">} />
+          }
+      </View>
+
+  )
+}
+
+const RenderIOSData = ({report}: { report?: SecurityCheckReport<"ios"> }) => {
   if (!report) return null
 
   return (
-      <View>
-        <View style={{backgroundColor: report.isSecure ? "green" : "red", padding: 10, borderRadius: 10}}>
-          <Text style={{color: "white", fontSize: 20}}>{report.isSecure ? "Secure" : "Environment is not secure"}</Text>
-        </View>
-        <View style={{backgroundColor: report.debugger.value === true ? "red" : report.debugger.value === false ? "green" : "yellow", padding: 10, marginTop: 10, borderRadius: 10}}>
-          <Text style={{color: "white", fontSize: 18}}>{report.debugger.value === true ? "Debugger detected" : report.debugger.value === false ? "Debugger is not detected" : "Could not determine"}</Text>
-          <Evidence evidence={report.debugger.evidence} />
-        </View>
-
-        <View style={{backgroundColor: report.jailbreak.value ? "red" : "green", padding: 10, marginTop: 10, borderRadius: 10}}>
+        <View style={{backgroundColor: report.jailbreak?.value ? "red" : "green", padding: 10, marginTop: 10, borderRadius: 10}}>
           <Text style={{color: "white", fontSize: 18}}>{report?.jailbreak?.value ? "Jailbreak detected" : "Device is not jailbroken"}</Text>
-          <Evidence evidence={report.jailbreak.evidence} />
+          <Evidence evidence={report.jailbreak?.evidence} />
         </View>
-
-        <View style={{backgroundColor: report.emulator.value ? "red" : "green", padding: 10, marginTop: 10, borderRadius: 10}}>
-          <Text style={{color: "white", fontSize: 18}}>{report?.emulator?.value ? "Run on simulator" : "Run on real device"}</Text>
-          <Evidence evidence={report.emulator.evidence} />
-        </View>
-      </View>
   )
+}
+
+const RenderAndroidData = ({report}: { report?: SecurityCheckReport<"android"> }) => {
+    if (!report) return null
+
+    return (
+            <View style={{backgroundColor: report.root?.value ? "red" : "green", padding: 10, marginTop: 10, borderRadius: 10}}>
+                <Text style={{color: "white", fontSize: 18}}>{report?.root?.value ? "Root detected" : "Device is not rooted"}</Text>
+                <Evidence evidence={report.root?.evidence} />
+            </View>
+    )
 }
 
 export default function App() {
@@ -69,7 +95,7 @@ export default function App() {
       <ScrollView style={styles.container}>
         <Text style={styles.header}>Module API Example</Text>
         <Group name="Functions">
-          <RenderData report={data} />
+            {!!data && <RenderData report={data}/>}
         </Group>
       </ScrollView>
     </SafeAreaView>

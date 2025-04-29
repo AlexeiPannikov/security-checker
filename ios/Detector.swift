@@ -9,7 +9,6 @@ protocol Detector {
     func runDetection() -> Report
 }
 
-
 extension DetectorReport {
     var isEmptyEvidence: Bool {
         switch self {
