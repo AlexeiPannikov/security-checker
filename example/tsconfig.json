@@ -1,10 +1,10 @@
 {
-  "extends": "expo/tsconfig.base",
-  "compilerOptions": {
-    "strict": true,
-    "paths": {
-      "security-checker": ["../src/index"],
-      "security-checker/*": ["../src/*"]
-    }
-  }
+	"extends": "expo/tsconfig.base",
+	"compilerOptions": {
+		"strict": true,
+		"paths": {
+			"security-checker": ["../src/index"],
+			"security-checker/*": ["../src/*"]
+		}
+	}
 }
